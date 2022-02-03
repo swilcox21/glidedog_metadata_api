@@ -73,23 +73,23 @@ class TableView(APIView):
                 )
             serialized_table = GetSingleTableSerializer(table)
             return Response(serialized_table.data)
-        tables = Table.objects.all().order_by('-dataset','name','-version')
+        tables = Table.objects.all().order_by('name','-version')
         serialized_table = GetAllTablesSerializer(tables, many=True, context={'request': request})
         return Response(serialized_table.data)
     def post(self, request):
         serialized_table = TableSerializer(data=request.data, many=True)
         if serialized_table.is_valid():
             st = serialized_table.save()
-            print('this is my st FLAGG!!!:',st)
             for t in st:
-                print(t.id)
                 dataset = Dataset.objects.filter(table__id=t.id)
-                print(dataset)
                 for d in dataset:
                     t.dataset.remove(d)
             for d in dataset:
                 all_other_tables = Table.objects.filter(dataset__id = d.id)
+                d.current = False
+                d.save()
                 d.pk = None
+                d.current = True
                 d.version = d.version + 1
                 d.save()
                 for t in st:
@@ -160,9 +160,10 @@ class DatasetTruncateView(APIView):
         return Response(serialized_dataset.data)
     def post(self, request, dataset_id):
         dataset = get_object_or_404(Dataset.objects.filter(id = dataset_id))
-        # dataset.deleted = True
-        # dataset.save()
+        dataset.current = False
+        dataset.save()
         dataset.pk = None
+        dataset.current = True
         dataset.version = dataset.version + 1
         dataset.save()
         serialized_tables = NewTableSerializer(data=request.data, many=True)
@@ -191,22 +192,25 @@ class TableTruncateView(APIView):
         dataset = Dataset.objects.filter(table__id = table_id).last()
         table = get_object_or_404(Table.objects.filter(id = table_id))
         tables = Table.objects.filter(dataset__id = dataset.id)
+        dataset.current = False
+        dataset.save()
         dataset.pk = None
+        dataset.current = True
         dataset.version = dataset.version + 1
         dataset.save()
         for t in tables:
             t.dataset.add(dataset)
         table.dataset.remove(dataset)
-        # table.deleted = True
-        # table.save()
+        table.current = False
+        table.save()
         table.pk = None
+        table.current = True
         table.version = table.version + 1
         table.save()
         table.dataset.add(dataset)
         serialized_columns = GetAllColumnsSerializer(data=request.data, many=True)
         if serialized_columns.is_valid():
             sc = serialized_columns.save()
-            print(sc)
             for column in sc:
                 column.table = table
                 column.save()

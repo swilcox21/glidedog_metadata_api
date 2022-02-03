@@ -54,12 +54,12 @@ class GetSingleTableSerializer(serializers.ModelSerializer):
     column = GetAllColumnsSerializer(many=True, required=False, read_only=True)
     class Meta:
         model = Table
-        fields = ['id','name','rows','version','deleted','dataset','column']  
+        fields = ['id','name','rows','version','current','dataset','column']  
 class GetSingleDatasetSerializer(serializers.ModelSerializer):
     table = GetSingleTableSerializer(required=False, read_only=True, many=True)
     class Meta:
         model = Dataset
-        fields = ['id','name','owner','version','deleted','table']
+        fields = ['id','name','owner','version','current','table']
 
 # serializers for INITIAL DATASET COMMIT below 
 # (can handle full payload for one dataset with tables and columns included)
@@ -73,7 +73,6 @@ class NewTableSerializer(serializers.ModelSerializer):
     class Meta:
         model = Table
         exclude = ('dataset',)
-        # fields = '__all__'
     def create(self, validated_data):
         all_columns_data = validated_data.pop('column')
         table = super(NewTableSerializer, self).create(validated_data)

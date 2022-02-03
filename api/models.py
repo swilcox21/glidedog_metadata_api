@@ -6,18 +6,18 @@ class Dataset(models.Model):
     name = models.CharField(max_length=50)
     owner = models.CharField(max_length=50)
     version = models.IntegerField(default=1)
-    deleted = models.BooleanField(default=False)
+    current = models.BooleanField(default=True)
     def __int__(self):
         return self.name
     def delete(self):
-        self.deleted = True
+        self.current = False
         super(Dataset, self).save()
 
 class Table(models.Model):
     name = models.CharField(max_length=50)
     rows = models.IntegerField()
     version = models.IntegerField(default=1)
-    deleted = models.BooleanField(default=False)
+    current = models.BooleanField(default=True)
     dataset = models.ManyToManyField(Dataset, related_name='table')
     def __str__(self):
         return self.name
@@ -29,9 +29,8 @@ class Table(models.Model):
         dataset.save()
         for t in tables_d:
             t.dataset.add(dataset)
-        print(dataset, dataset.id)
         self.dataset.remove(dataset)
-        self.deleted = True
+        self.current = False
         super(Table, self).save()
 
 class Column(models.Model):
